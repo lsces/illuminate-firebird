@@ -12,8 +12,8 @@ use Illuminate\Database\SqlServerConnection;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use PDOException;
-use Xgrz\Firebird\FirebirdConnection;
-use Xgrz\Firebird\FirebirdConnector;
+use Firebird\Illuminate\FirebirdConnection;
+use Firebird\Illuminate\FirebirdConnector;
 
 class ConnectionFactory
 {
