@@ -13,12 +13,21 @@ class FirebirdProcessor extends Processor
      * @param  array  $results
      * @return array
      */
-    public function processColumnListing($results)
-    {
-        return array_map(function ($result) {
-            return ((object) $result)->column_name;
-        }, $results);
-    }
+    public function processColumns($results)
+	{
+		return array_map(function ($result) {
+			return (object) [
+				'name' => strtolower($result->name ),
+//				'type_name' => strtolower($result['type_name'] ?? ''),
+//				'type' => $this->getColumnType($result),
+//				'collation' => $result['collation'] ?? null,
+//				'nullable' => (bool) ($result['nullable'] ?? true),
+//				'default' => $result['default'] ?? null,
+//				'auto_increment' => (bool) ($result['auto_increment'] ?? false),
+//				'comment' => $result['comment'] ?? null,
+			];
+		}, $results);
+	}
 
     /**
      * Process an  "insert get ID" query.
