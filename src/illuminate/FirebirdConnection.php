@@ -43,7 +43,7 @@ class FirebirdConnection extends DatabaseConnection
     /**
      * Get a schema builder instance for this connection.
      *
-     * @return \Firebird\Illuminate\Schema\Builder
+     * @return \Firebird\Illuminate\Schema\FirebirdBuilder
      */
     public function getSchemaBuilder(): FirebirdSchemaBuilder
     {
@@ -77,7 +77,7 @@ class FirebirdConnection extends DatabaseConnection
 	/**
      * Get a new query builder instance.
      *
-     * @return \Firebird\IlluminateQuery\FirebirdBuilder
+     * @return \Firebird\Illuminate\Query\FirebirdBuilder
      */
     public function query()
     {
@@ -155,6 +155,46 @@ class FirebirdConnection extends DatabaseConnection
 			}
             return count($result) > 0 ? $result : [];
         });
+    }
+
+    /**
+     * Run a select statement against the database and returns a generator.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @param  bool  $useReadPdo
+     * @return \Generator<int, \stdClass>
+     */
+    public function cursor($query, $bindings = [], $useReadPdo = true)
+    {
+        $statement = $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+            if ($this->pretending()) {
+                return [];
+            }
+
+            // First we will create a statement for the query. Then, we will set the fetch
+            // mode and prepare the bindings for the query. Once that's done we will be
+            // ready to execute the query against the database and return the cursor.
+            $statement = $this->prepared($this->getPdoForSelect($useReadPdo)
+                ->prepare($query));
+
+            $this->bindValues(
+                $statement, $this->prepareBindings($bindings)
+            );
+
+            // Next, we'll execute the query against the database and return the statement
+            // so we can return the cursor. The cursor will use a PHP generator to give
+            // back one row at a time without using a bunch of memory to render them.
+            $statement->execute();
+
+            return $statement;
+        });
+
+        while ($record = $statement->fetch()) {
+			$lowerCaseRow = array_change_key_case((array) $record, CASE_LOWER);
+
+            yield (object) $lowerCaseRow;
+        }
     }
 
     /**
