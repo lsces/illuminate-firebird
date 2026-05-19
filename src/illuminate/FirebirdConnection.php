@@ -1,6 +1,6 @@
 <?php
 
-namespace  Firebird\Illuminate;
+namespace Firebird\Illuminate;
 
 use Illuminate\Database\Connection as DatabaseConnection;
 use Illuminate\Support\Collection;

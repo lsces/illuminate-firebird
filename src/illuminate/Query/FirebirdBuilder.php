@@ -46,17 +46,16 @@ class FirebirdBuilder extends QueryBuilder
      */
     public function insert(array $values)
     {
-		// Handle multi-row inserts by looping
-		if (count($values) > 1 && is_array(reset($values))) {
-			$results = [];
-			foreach ($values as $row) {
-				$results[] = parent::insert($row);
-			}
-			return end($results);
-    }
-    
-    // Single row or already formatted correctly
-    return parent::insert($values);
+        // Firebird's RETURNING clause only supports single-row inserts, so loop for multi-row.
+        if (count($values) > 1 && is_array(reset($values))) {
+            $results = [];
+            foreach ($values as $row) {
+                $results[] = parent::insert($row);
+            }
+            return end($results);
+        }
+
+        return parent::insert($values);
     }
     public function where($column, $operator = NULL, $value = NULL, $boolean = 'and')
     {
@@ -83,18 +82,17 @@ class FirebirdBuilder extends QueryBuilder
     protected function pluckFromObjectColumn($queryResult, $column, $key)
     {
         $results = [];
-		$column = str_replace('"', '', $column);
-		foreach ($queryResult as $item) {
-			if (is_null($key)) {
-				foreach ($queryResult as $row) {
-					$results[] = $row->$column;
-				}
-			} else {
-				foreach ($queryResult as $row) {
-					$results[$row->$key] = $row->$column;
-				}
-			}
-		}
+        $column  = str_replace('"', '', $column);
+
+        if (is_null($key)) {
+            foreach ($queryResult as $row) {
+                $results[] = $row->$column;
+            }
+        } else {
+            foreach ($queryResult as $row) {
+                $results[$row->$key] = $row->$column;
+            }
+        }
 
         return new Collection($results);
     }

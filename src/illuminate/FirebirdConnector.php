@@ -1,9 +1,10 @@
 <?php
 
-namespace  Firebird\Illuminate;
+namespace Firebird\Illuminate;
 
 use Illuminate\Database\Connectors\Connector;
 use Illuminate\Database\Connectors\ConnectorInterface;
+use InvalidArgumentException;
 use PDO;
 
 class FirebirdConnector extends Connector implements ConnectorInterface
@@ -31,25 +32,29 @@ class FirebirdConnector extends Connector implements ConnectorInterface
      */
     protected function getDsn(array $config): string
     {
-        extract($config);
+        $host     = $config['host'] ?? null;
+        $database = $config['database'] ?? null;
+        $port     = $config['port'] ?? null;
+        $role     = $config['role'] ?? null;
+        $charset  = $config['charset'] ?? null;
 
-        if (! isset($host) || ! isset($database)) {
-            trigger_error('Cannot connect to Firebird Database, no host or database supplied');
+        if ($host === null || $database === null) {
+            throw new InvalidArgumentException('Cannot connect to Firebird Database, no host or database supplied');
         }
 
         $dsn = "firebird:dbname={$host}";
 
-        if (isset($port)) {
+        if ($port !== null) {
             $dsn .= "/{$port}";
         }
 
         $dsn .= ":{$database};";
 
-        if (isset($role)) {
+        if ($role !== null) {
             $dsn .= "role={$role};";
         }
 
-        if (isset($charset)) {
+        if ($charset !== null) {
             $dsn .= "charset={$charset};";
         }
 

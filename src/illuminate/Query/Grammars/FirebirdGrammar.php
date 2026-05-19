@@ -103,12 +103,15 @@ class FirebirdGrammar extends Grammar
     {
         $table = $this->wrapTable($query->from);
         $alias = last(preg_split('/\s+as\s+/i', $query->from));
-		switch ($alias) { 
-			case 'block_setting' : $field = 'block_id'; break;
-			case 'places' : $field = 'p_id'; break;
-			default : $field = $alias.'_id';
-		}
-		$selectSql = $this->compileSelect($query->select($alias.'.'.$field));
+
+        // Most tables follow the {table}_id convention; exceptions listed explicitly.
+        $field = match ($alias) {
+            'block_setting' => 'block_id',
+            'places'        => 'p_id',
+            default         => $alias . '_id',
+        };
+
+        $selectSql = $this->compileSelect($query->select($alias . '.' . $field));
 
         return "delete from {$table} where {$this->wrap($field)} in ({$selectSql})";
     }
@@ -157,17 +160,17 @@ class FirebirdGrammar extends Grammar
      */
     public function compileInsert(Builder $query, array $values)
     {
-       $table = $this->wrapTable($query->from);
+        $table = $this->wrapTable($query->from);
 
         if (empty($values)) {
             return "insert into {$table} default values";
         }
 
-        if (! is_array(array_first($values))) {
+        if (! is_array(reset($values))) {
             $values = [$values];
         }
 
-        $columns = $this->columnize(array_keys(array_first($values)));
+        $columns = $this->columnize(array_keys(reset($values)));
 
         // We need to build a list of parameter place-holders of values that are bound
         // to the query. Each insert should have the exact same number of parameter
@@ -187,12 +190,15 @@ class FirebirdGrammar extends Grammar
      */
     protected function wrapValue($value)
     {
-		// wrap reserved words in firebird
-		if ($value == 'year' or $value == 'pending' or $value == 'value') {
-            return '"'.$value.'"';
+        static $reserved = [
+            'day', 'hour', 'index', 'minute', 'month', 'order', 'pending',
+            'position', 'rows', 'second', 'type', 'value', 'version', 'year',
+        ];
+
+        if (in_array(strtolower($value), $reserved, true)) {
+            return '"' . $value . '"';
         }
 
-		// Currently just return unwrapped 
         return $value;
     }
 
